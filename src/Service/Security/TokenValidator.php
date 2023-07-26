@@ -75,7 +75,7 @@ class TokenValidator
                 'realm' => 'Fusio',
             );
 
-            if ($type == 'Bearer' && !empty($accessToken)) {
+            if (in_array(strtolower($type), ['bearer', 'apikey']) && !empty($accessToken)) {
                 try {
                     $token = $this->getToken($accessToken, $context->getRouteId(), $requestMethod);
                 } catch (\UnexpectedValueException $e) {
