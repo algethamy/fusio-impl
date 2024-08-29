@@ -61,12 +61,16 @@ class TokenValidator
             $needsAuth = !$method['public'];
         }
 
+        if(!$needsAuth) {
+            return true;
+        }
+
         $requestMethod = $requestMethod == 'HEAD' ? 'GET' : $requestMethod;
 
         // authorization is required if the method is not public. In case we get
         // a header from the client we also check the token so that the client
         // gets maybe another rate limit
-        if ($needsAuth || !empty($authorization)) {
+        if (!empty($authorization)) {
             $parts       = explode(' ', $authorization ?? '', 2);
             $type        = $parts[0] ?? null;
             $accessToken = $parts[1] ?? null;
