@@ -62,6 +62,13 @@ class TokenValidator
         }
 
         if(!$needsAuth) {
+            $app = new Model\App(true, 0, 0, 0, '', '', '', [], []);
+            $user = new Model\User(true, 0, 0, 0, 0, '', '', 0);
+            $token = new Model\Token(0, 0, 0, [], '', '');
+
+            $context->setApp($app);
+            $context->setUser($user);
+            $context->setToken($token);
             return true;
         }
 
