@@ -77,48 +77,39 @@ class TokenValidator
         // authorization is required if the method is not public. In case we get
         // a header from the client we also check the token so that the client
         // gets maybe another rate limit
-        if (!empty($authorization)) {
-            $parts       = explode(' ', $authorization ?? '', 2);
-            $type        = $parts[0] ?? null;
-            $accessToken = $parts[1] ?? null;
 
-            $params = array(
-                'realm' => 'Fusio',
-            );
+        $parts       = explode(' ', $authorization ?? '', 2);
+        $type        = $parts[0] ?? null;
+        $accessToken = $parts[1] ?? null;
 
-            if (in_array(strtolower($type), ['bearer', 'apikey']) && !empty($accessToken)) {
-                try {
-                    $token = $this->getToken($accessToken, $context->getRouteId(), $requestMethod);
-                } catch (\UnexpectedValueException $e) {
-                    throw new UnauthorizedException($e->getMessage(), 'Bearer', $params);
+        $params = array(
+            'realm' => 'Fusio',
+        );
+
+        if (in_array(strtolower($type), ['bearer', 'apikey']) && !empty($accessToken)) {
+            try {
+                $token = $this->getToken($accessToken, $context->getRouteId(), $requestMethod);
+            } catch (\UnexpectedValueException $e) {
+                throw new UnauthorizedException($e->getMessage(), 'Bearer', $params);
+            }
+
+            if ($token instanceof Model\Token) {
+                $app = $this->appRepository->get($token->getAppId());
+                if ($app !== null) {
+                    $context->setApp($app);
                 }
 
-                if ($token instanceof Model\Token) {
-                    $app = $this->appRepository->get($token->getAppId());
-                    if ($app !== null) {
-                        $context->setApp($app);
-                    }
-
-                    $user = $this->userRepository->get($token->getUserId());
-                    if ($user !== null) {
-                        $context->setUser($user);
-                    }
-
-                    $context->setToken($token);
-                } else {
-                    throw new UnauthorizedException('Invalid access token', 'Bearer', $params);
+                $user = $this->userRepository->get($token->getUserId());
+                if ($user !== null) {
+                    $context->setUser($user);
                 }
+
+                $context->setToken($token);
             } else {
-                throw new UnauthorizedException('Missing authorization header', 'Bearer', $params);
+                throw new UnauthorizedException('Invalid access token', 'Bearer', $params);
             }
         } else {
-            $app = new Model\App(true, 0, 0, 0, '', '', '', [], []);
-            $user = new Model\User(true, 0, 0, 0, 0, '', '', 0);
-            $token = new Model\Token(0, 0, 0, [], '', '');
-
-            $context->setApp($app);
-            $context->setUser($user);
-            $context->setToken($token);
+            throw new UnauthorizedException('Missing authorization header', 'Bearer', $params);
         }
 
         return true;
